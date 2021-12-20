@@ -1,5 +1,6 @@
 //const { Cipher } = require('crypto');
 //const { response } = require('express');
+const { timeStamp } = require('console');
 const https = require('https');
 //const redis = require('./redis.js');
 const redis = require('redis');
@@ -14,11 +15,36 @@ async function runApplication(){
     await client.connect();   
     await client.set("test" , "Se seteo esta variable en tu redis" );
     await getVehiclesPositionsFaked();
+    await client.incr("api_requests");
+    await client.set("last_position_request", Date.now() );
     await getFromRedisAllFaked();
+    let last = await client.get("last_position_request")
+    let time = new Date(parseInt(last));
+    console.log(`last:${last}`)
+    console.log(`last_date:${time}`)
+    let scores = await client.ZRANGE_WITHSCORES("access_by_id" ,  -5 , -1 ,   );
+     scores = scores.reverse()
+    console.log(scores)
     return;
     //return data;
     //instanceEventListeners(client , getVehicles);
 }
+
+async function getFromRedisAllFaked(){
+    for( let i = 0 ; i<1000 ; i++)
+    {
+        await client.incr("access_total")
+        await client.zIncrBy("access_by_id" , 90000-i , (90000+i).toString());
+        let lat = await client.hGet((90000+i).toString() , 'lat' );
+        let long =  await client.hGet((90000+i).toString() , 'long' );
+        console.log(`id:${(90000+i)}`);
+        console.log(`lat:${lat}`);
+        console.log(`long:${long}`);
+        console.log(`-----------`);
+    }
+}
+
+
 
 
 async function saveVehiclePositions(vehicles){
@@ -30,6 +56,7 @@ async function saveVehiclePositions(vehicles){
         console.log(`longitude=${element.longitude}`);
         await client.HSET(element.id , 'lat' ,element.latitude  );
         await client.HSET(element.id , 'long' , element.longitude );
+
     });
     return vehicles;
 }
@@ -62,20 +89,6 @@ async function getVehiclesPositions(){
         });
     })
 }
-
-async function getFromRedisAllFaked(){
-    for( let i = 0 ; i<1000 ; i++)
-    {
-        let lat = await client.hGet((90000+i).toString() , 'lat' );
-        let long =  await client.hGet((90000+i).toString() , 'long' );
-        console.log(`id:${(90000+i)}`);
-        console.log(`lat:${lat}`);
-        console.log(`long:${long}`);
-        console.log(`-----------`);
-    }
-}
-
-
 
 
 
