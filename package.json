@@ -17,6 +17,6 @@
   },
   "homepage": "https://github.com/szavalia/bd2#readme",
   "dependencies": {
-    "redis": "^4.0.0"
+    "redis": "^4.0.1"
   }
 }

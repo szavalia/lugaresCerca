@@ -7,41 +7,74 @@ const client = redis.createClient();
 const TRANSPORTES_CLIENT = "b69c441fb3d44c38a9e534852e49c8da"
 const TRANSPORTES_TOKEN = "E739cD458Bb64A8eAC0416c9Ab066c1b"
 const API_URL = `https://apitransporte.buenosaires.gob.ar/colectivos/vehiclePositionsSimple?client_id=${TRANSPORTES_CLIENT}&client_secret=${TRANSPORTES_TOKEN}`
+const EXPIRE_TIME_SECONDS = 60
 runApplication();
 
 async function runApplication(){
     await client.connect();   
     await client.set("test" , "Se seteo esta variable en tu redis" );
-    console.log(await client.get("test"));
-    getVehicles();
+    await getVehiclesPositionsFaked();
+    await getFromRedisAllFaked();
+    return;
     //return data;
     //instanceEventListeners(client , getVehicles);
 }
 
 
+async function saveVehiclePositions(vehicles){
+    console.log(vehicles);
+    vehicles.forEach(async (element) => {
+        console.log("------------")
+        console.log(`vehicleId=${element.id}`);
+        console.log(`latitude=${element.latitude}`);
+        console.log(`longitude=${element.longitude}`);
+        await client.HSET(element.id , 'lat' ,element.latitude  );
+        await client.HSET(element.id , 'long' , element.longitude );
+    });
+    return vehicles;
+}
 
-function getVehicles(){
-    https.get(API_URL , (response) =>{ 
+async function getVehiclesPositionsFaked(){
+        let array = []
+        for( let i = 0 ; i<1000 ; i++)
+        {
+            array.push({
+                id: (90000+i).toString(),
+                latitude: -34.0 + i/100,
+                longitude: -54.0 + i/100
+            })
+            
+        }
+        await saveVehiclePositions(array);
+        return 
+} 
+
+
+
+async function getVehiclesPositions(){
+    https.get(API_URL , async (response) =>{ 
         let data = '';
         response.on('data' , (chunk) =>{
             data+=chunk
         });
         response.on('end' , () =>{
-            printVehicles(data);    
+           return saveVehiclePositions(JSON.parse(data));    
         });
-    });
+    })
 }
 
-function printVehicles(data){
-    let vehicles = JSON.parse(data);
-    vehicles.forEach(element => {
-        console.log("------------")
-        console.log(`vehicleId=${element.id}`);
-        console.log(`latitude=${element.latitude}`);
-        console.log(`longitude=${element.longitude}`);
-       //client.HSET(element.id , 'lat' ,element.latitude ).then(client.HSET(element.id , 'long' , element.longitude ));
-    });
+async function getFromRedisAllFaked(){
+    for( let i = 0 ; i<1000 ; i++)
+    {
+        let lat = await client.hGet((90000+i).toString() , 'lat' );
+        let long =  await client.hGet((90000+i).toString() , 'long' );
+        console.log(`id:${(90000+i)}`);
+        console.log(`lat:${lat}`);
+        console.log(`long:${long}`);
+        console.log(`-----------`);
+    }
 }
+
 
 
 
