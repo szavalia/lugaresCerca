@@ -1,19 +1,25 @@
 //const { Cipher } = require('crypto');
 //const { response } = require('express');
+require('dotenv').config();
 const { timeStamp } = require('console');
 const https = require('https');
-//const redis = require('./redis.js');
 const redis = require('redis');
 const client = redis.createClient();
-const TRANSPORTES_CLIENT = "b69c441fb3d44c38a9e534852e49c8da"
-const TRANSPORTES_TOKEN = "E739cD458Bb64A8eAC0416c9Ab066c1b"
+const {MongoClient} = require('mongodb');
+
+const {TRANSPORTES_CLIENT ,TRANSPORTES_TOKEN , MONGO_DB_DATABASE , MONGO_DB_IP} = process.env;
+
 const API_URL = `https://apitransporte.buenosaires.gob.ar/colectivos/vehiclePositionsSimple?client_id=${TRANSPORTES_CLIENT}&client_secret=${TRANSPORTES_TOKEN}`
+const MONGO_DB_URL =`mongodb://${MONGO_DB_IP}/${MONGO_DB_DATABASE}`;
+
+
+const clientMongo = new MongoClient(MONGO_DB_URL);
+let db;
+let collection;
+
 const EXPIRE_TIME_SECONDS = 60
 runApplication();
-
-async function runApplication(){
-    await client.connect();   
-    await client.set("test" , "Se seteo esta variable en tu redis" );
+async function cycleRun(){
     await getVehiclesPositionsFaked();
     await client.incr("api_requests");
     await client.set("last_position_request", Date.now() );
@@ -23,8 +29,28 @@ async function runApplication(){
     console.log(`last:${last}`)
     console.log(`last_date:${time}`)
     let scores = await client.ZRANGE_WITHSCORES("access_by_id" ,  -5 , -1 ,   );
-     scores = scores.reverse()
+    scores = scores.reverse()
     console.log(scores)
+    setTimeout(async () => {await cycleRun()} , 1000 * 60 );
+}
+
+async function runApplication(){
+    //redis
+    await client.connect();   
+    await client.set("test" , "Se seteo esta variable en tu redis" );
+    //mongo
+    await clientMongo.connect();
+    db = await clientMongo.db('final');
+    collection = await db.collection('locations');
+    const findResult = await collection.find({
+        '$geoWithin': { 
+            '$center': [ [-54 , -34 ] , 200 ]
+        }
+    }).limit(5).toArray();
+    //
+    console.log(findResult);
+    console.log("Eran " + findResult.length);
+    //cycleRun()
     return;
     //return data;
     //instanceEventListeners(client , getVehicles);
