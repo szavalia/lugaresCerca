@@ -4,7 +4,7 @@ require('dotenv').config();
 const https = require('https');
 const express = require('express');
 const app = express();
-const {TRANSPORTES_CLIENT ,TRANSPORTES_TOKEN , API_PORT , REFRESH_TIME} = process.env;
+const {TRANSPORTES_CLIENT ,TRANSPORTES_TOKEN , API_PORT , REFRESH_TIME , MOCK_DATA} = process.env;
 const API_URL = `https://apitransporte.buenosaires.gob.ar/colectivos/vehiclePositionsSimple?client_id=${TRANSPORTES_CLIENT}&client_secret=${TRANSPORTES_TOKEN}`
 const { initMongo , closePlaces } = require('./mongo.js');
 const { getVehiclesPositionsMocked } = require('./mock.js');
@@ -22,7 +22,7 @@ app.get('/:id', async (req , res) =>{
         })
     }
     else{
-        let values = await closePlaces(point , 10 );
+        let values = await closePlaces(point , 3 );
         res.send({
             vehicleId: id,
             position: point,
@@ -48,13 +48,24 @@ app.listen(API_PORT , () => {
     }
 );
 
+if(MOCK_DATA == 1 ){
+    console.log('Data simulation is ON')
+}else{
+    
+    console.log('Data simulation is OFF , requesting to API')
+}
 
 
 runApplication();
 
 async function cycleRun(){
+    let vehicles = [];
     //primero levanta las posiciones
-    let vehicles = await getVehiclesPositionsMocked();
+    if( MOCK_DATA == 1 ){
+        vehicles = await getVehiclesPositionsMocked();
+    }else{
+        vehicles = await getVehiclesPositions();
+    }
     //manejo todo lo que es subir al redis la data
     await saveVehiclePositions(vehicles);
 

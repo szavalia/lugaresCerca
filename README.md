@@ -17,4 +17,6 @@ Trabajo final de BDII
     API_PORT= //el puerto en el que correra esta api
     REDIS_HOSTNAME= //el host o ip de su redis (en nuestro caso corre en localhost)
     REDIS_PORT= //el puerto en el que esta redis 
+    REFRESH_TIME = //el tiempo en segundos que tardara en obtener las nuevas localizaciones
+    MOCK_DATA = // flag -> 1 para usar datos generados, -> 0 para hacer request a la API del gobierno
 4- Correr con node ./index.js
