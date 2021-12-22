@@ -32,9 +32,13 @@ app.get('/:id', async (req , res) =>{
             position: point,
             near: values
         });
-        array.forEach( async (value) => {
-            await incPlace(value.name);
-            await incAmenity(value.amenity)
+        values.forEach( async (value) => {
+            if(value.name){
+                await incPlace(value.name);
+            }
+            if(value.amenity){
+                await incAmenity(value.amenity)
+            }
         });
     }
 })
