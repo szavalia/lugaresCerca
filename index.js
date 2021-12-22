@@ -4,17 +4,13 @@ require('dotenv').config();
 const https = require('https');
 const express = require('express');
 const app = express();
-const {TRANSPORTES_CLIENT ,TRANSPORTES_TOKEN , API_PORT} = process.env;
+const {TRANSPORTES_CLIENT ,TRANSPORTES_TOKEN , API_PORT , REFRESH_TIME} = process.env;
 const API_URL = `https://apitransporte.buenosaires.gob.ar/colectivos/vehiclePositionsSimple?client_id=${TRANSPORTES_CLIENT}&client_secret=${TRANSPORTES_TOKEN}`
 const { initMongo , closePlaces } = require('./mongo.js');
 const { getVehiclesPositionsMocked } = require('./mock.js');
 const { initRedis , saveVehiclePositions , getStats , getLocationFromId, incPlace, incAmenity} = require('./redis.js');
-
 let collection;
 let client;
-
-const EXPIRE_TIME_SECONDS = 60
-
 
 app.get('/:id', async (req , res) =>{
     let id = req.params.id;
@@ -62,7 +58,7 @@ async function cycleRun(){
     //manejo todo lo que es subir al redis la data
     await saveVehiclePositions(vehicles);
 
-    setTimeout(async () => {await cycleRun()} , 1000 * 60 );
+    setTimeout(async () => {await cycleRun()} , 1000 * REFRESH_TIME );
 }
 
 async function runApplication(){

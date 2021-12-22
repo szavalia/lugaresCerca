@@ -1,5 +1,9 @@
+const {REDIS_HOSTNAME , REDIS_PORT } = process.env
 const redis = require('redis');
-const client = redis.createClient();
+const client = redis.createClient({
+    host: REDIS_HOSTNAME,
+    port: REDIS_PORT,
+});
 
 async function initRedis(){
     await client.connect();
