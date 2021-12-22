@@ -4,17 +4,16 @@ require('dotenv').config();
 const https = require('https');
 const express = require('express');
 const app = express();
-const {TRANSPORTES_CLIENT ,TRANSPORTES_TOKEN} = process.env;
+const {TRANSPORTES_CLIENT ,TRANSPORTES_TOKEN , API_PORT} = process.env;
 const API_URL = `https://apitransporte.buenosaires.gob.ar/colectivos/vehiclePositionsSimple?client_id=${TRANSPORTES_CLIENT}&client_secret=${TRANSPORTES_TOKEN}`
 const { initMongo , closePlaces } = require('./mongo.js');
 const { getVehiclesPositionsMocked } = require('./mock.js');
-const { initRedis , saveVehiclePositions , getStats , getLocationFromId} = require('./redis.js');
+const { initRedis , saveVehiclePositions , getStats , getLocationFromId, incPlace, incAmenity} = require('./redis.js');
 
 let collection;
 let client;
 
 const EXPIRE_TIME_SECONDS = 60
-
 
 
 app.get('/:id', async (req , res) =>{
@@ -33,6 +32,10 @@ app.get('/:id', async (req , res) =>{
             position: point,
             near: values
         });
+        array.forEach( async (value) => {
+            await incPlace(value.name);
+            await incAmenity(value.amenity)
+        });
     }
 })
 
@@ -40,8 +43,8 @@ app.get('/app/stats', async (req , res) =>{
     res.send(await getStats());
 })
 
-app.listen(5000 , () => {
-    console.log('server ready on 5000') 
+app.listen(API_PORT , () => {
+    console.log(`server ready on ${API_PORT}`) 
     }
 );
 

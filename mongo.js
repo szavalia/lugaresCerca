@@ -31,8 +31,6 @@ async function closePlaces(point , limit){
     let values = [];
     findResult.forEach( (place) => {
         //no es necesario que sean async, las puedo subir a la bd y listo
-        incAmenity(place.properties.amenity);
-        incPlace(place.properties.name);
         values.push( {
             name : place.properties.name,
             amenity : place.properties.amenity,
