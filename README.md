@@ -2,13 +2,19 @@
 ## Introducción
 El objetivo del proyecto es exponer una página web que pueda ser accedida desde los monitores de los colectivos de la ciudad para mostrar los lugares de interés cercanos al mismo.
 
-El proyecto tiene 2 partes: una API, que hace uso de los datos guardados en las bases de MongoDB y Redis, y un cliente web, que muestra la información procesada por la API de una forma útil. 
+El proyecto tiene 2 partes: una API, que hace uso de los datos guardados en las bases de MongoDB y Redis, y un cliente web, que muestra la información procesada por la API de una forma útil y visual. 
 
 Este proyecto fue realizado para la materia Bases de Datos 2 dictada en el Instituto Tecnológico de Buenos Aires en el 2021. El profesor a cargo de la materia es Diego Ariel Aizemberg (https://github.com/aaizemberg). 
 
+## Integrantes del equipo:
+- Ana Cruz (https://github.com/anitacruz)
+- Valentino Riera Torraca (https://github.com/vriera)
+- Salustiano José Zavalía Pángaro (https://github.com/szavalia)
+
 ## Importación de los datos
 Usamos MongoDB para guardar datos espaciales de OpenStreetMap, donde se listan las ubicaciones de interés. 
-Los datasets que usamos están en la carpeta data de este proyecto, pero se pueden descargar datos actualizados desde https://overpass-turbo.eu/ siguiendo las instrucciones del Anexo 1:
+
+Los datasets que usamos están en la carpeta data de este proyecto, pero se pueden descargar datos actualizados siguiendo las instrucciones del Anexo 1:
 
 Para importar los datasets a MongoDB, primero tenemos que copiarlos al repo parándonos en el root de este proyecto y usando:
 
@@ -30,9 +36,9 @@ Luego de entrar al contenedor usando docker exec, podemos descomprimir el .zip y
 Luego, creamos una database "final" y la collection "locations" dentro de la misma.
 Ahora, para cada uno de los json vamos a usar mongoimport:
         
-    mongoimport --db final --collection locations --type json [NOMBRE_DEL_JSON].json --legacy --jsonArray
+    mongoimport --db final --collection locations --type json NOMBRE_DEL_JSON.json --legacy --jsonArray
     
-Para conseguir el token de la API de transporte del GCBA, seguir las instrucciones disponibles en https://www.buenosaires.gob.ar/desarrollourbano/transporte/apitransporte
+Para conseguir el token de la API de transporte del GCBA (que vamos a usar en la API), seguir las instrucciones disponibles en https://www.buenosaires.gob.ar/desarrollourbano/transporte/apitransporte
 
 ***
 ## Instalacion de la API
@@ -63,28 +69,28 @@ Para conseguir el token de la API de transporte del GCBA, seguir las instruccion
 ***
 ## Instalación del cliente web
 
-Clonar el repo https://github.com/anitacruz/PaginaBD2, o descomprimir el archivo cliente.zip en el root. Este es un proyecto Maven, y usamos un servidor Tomcat para hostearlo. 
-
 1) Descargar Apache Tomcat 8
-2) Copiar el archivo webapp.war en la raíz de este proyecto a la carpeta "webapps" del Tomcat
+2) Copiar el archivo webapp.war en la raíz de este proyecto a la carpeta "webapps" del Tomcat, ubicada en 
+        
+        /PATH_TO_TOMCAT/webapps
+
 3) Iniciar el servidor de Tomcat corriendo startup.sh haciendo 
         
         ./PATH_TO_TOMCAT/bin/startup.sh 
     
-4) Voila! Si ya iniciaste las bases de Redis y MongoDB para que se conecte la API, el Tomcat debería responder tus pedidos en localhost:8080
-
-
-
+4) Voila! Si ya iniciaste las bases de Redis y MongoDB para que se conecte la API, el Tomcat debería responder tus pedidos en localhost:8080.
 
 ***
-## Anexo 1
+## Anexo 1: 
+
+Para bajar datos frescos de OpenStreetMap, tenemos que ir a https://overpass-turbo.eu/ y correr el siguiente script para cada amenity relevante.
 
     node
-        [amenity=fast_food]
+        [amenity=NOMBRE_DEL_AMENITY]
         (around:40000, -34.6039112,-58.3708228);
     out;
 
-Reemplazar la amenity fast_food por cada una de la siguiente lista:
+Reemplazar la amenity por cada una de la siguiente lista:
 
     - arts_centre
     - bar
@@ -97,9 +103,12 @@ Reemplazar la amenity fast_food por cada una de la siguiente lista:
     - pub
     - theatre
 
-Luego, descargar los datos como un GeoJSON tocando 
+Luego, descargar los datos como un GeoJSON tocando (en la barra superior)
    
     Export -> download/copy as GeoJSON
 
-Luego
+Para extraer los datos relevantes de estos GeoJSONs, vamos a hacer:
 
+    jq --compact-output ".features" NOMBRE_DEL_GEOJSON.geojson > NOMBRE_DEL_GEOJSON.json
+
+Luego de correr esto con cada uno de los GeoJSONs, vamos a tener los JSONs listos para seguir las intrucciones de importación de datos más arriba.
