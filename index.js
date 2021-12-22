@@ -7,9 +7,9 @@ const app = express();
 const {TRANSPORTES_CLIENT ,TRANSPORTES_TOKEN} = process.env;
 const API_URL = `https://apitransporte.buenosaires.gob.ar/colectivos/vehiclePositionsSimple?client_id=${TRANSPORTES_CLIENT}&client_secret=${TRANSPORTES_TOKEN}`
 const { initMongo , closePlaces } = require('./mongo.js');
-const { initRedis , saveVehiclePositions , getStats , getLocationFromId} = require('./redis.js');
 const { getVehiclesPositionsMocked } = require('./mock.js');
-const { getHeapStatistics } = require('v8');
+const { initRedis , saveVehiclePositions , getStats , getLocationFromId} = require('./redis.js');
+
 let collection;
 let client;
 
@@ -17,20 +17,29 @@ const EXPIRE_TIME_SECONDS = 60
 
 
 
-app.get('/', async (req , res) =>{
-    let id = 90005;
+app.get('/:id', async (req , res) =>{
+    let id = req.params.id;
     let point = await getLocationFromId(id.toString());
-    let values = await closePlaces(point , 10 );
-    res.send({
-        vehicle: id,
-        position: point,
-        near: values
-    });
+    if( point.error){
+        res.send({
+        error: 1,
+        description: 'vehicle id not found'
+        })
+    }
+    else{
+        let values = await closePlaces(point , 10 );
+        res.send({
+            vehicle: id,
+            position: point,
+            near: values
+        });
+    }
 })
 
-app.get('/stats', async (req , res) =>{
+app.get('/app/stats', async (req , res) =>{
     res.send(await getStats());
 })
+
 app.listen(5000 , () => {
     console.log('server ready on 5000') 
     }
@@ -43,16 +52,9 @@ runApplication();
 async function cycleRun(){
     //primero levanta las posiciones
     let vehicles = await getVehiclesPositionsMocked();
+    //manejo todo lo que es subir al redis la data
     await saveVehiclePositions(vehicles);
 
-    //levanto todo de redis
-    //me fijo cual fue la ultima request
-    
-    //levanto los scores de cantidad de consultas
-    //let scores = await client.ZRANGE_WITHSCORES("access_by_id" ,  -5 , -1 );
-    //scores = scores.reverse()
-   // console.log(scores)
-    //reinicio el ciclo
     setTimeout(async () => {await cycleRun()} , 1000 * 60 );
 }
 
