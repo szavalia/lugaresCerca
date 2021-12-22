@@ -35,7 +35,7 @@ async function closePlaces(point , limit){
             name : place.properties.name,
             amenity : place.properties.amenity,
             website : place.properties.website,
-            point : place.geometry.coordinates.reverse(),
+            position : place.geometry.coordinates.reverse(),
             distance : place.distance
         })
     });

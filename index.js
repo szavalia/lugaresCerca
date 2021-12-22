@@ -28,7 +28,7 @@ app.get('/:id', async (req , res) =>{
     else{
         let values = await closePlaces(point , 10 );
         res.send({
-            vehicle: id,
+            vehicleId: id,
             position: point,
             near: values
         });
